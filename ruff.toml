@@ -1,0 +1,5 @@
+line-length = 100
+extend-exclude = ["config/asgi.py", "config/wsgi.py", "manage.py"]
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]

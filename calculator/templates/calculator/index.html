@@ -1,0 +1,98 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Schmidt Decomposition Calculator</title>
+  <link rel="stylesheet" href="{% static 'calculator/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>Schmidt Decomposition Calculator</h1>
+    <p class="lead">Is a two-part quantum state entangled, and how much? Enter its amplitudes to get the Schmidt rank,
+      coefficients and entanglement entropy.</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>State</h2>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+        <label for="{{ form.amplitudes.id_for_label }}">{{ form.amplitudes.label }}</label>
+        {{ form.amplitudes }}
+        <p class="hint">{{ form.amplitudes.help_text }} The vector is normalised for you.</p>
+        {% if form.amplitudes.errors %}<div class="error">{{ form.amplitudes.errors|join:" " }}</div>{% endif %}
+
+        <div class="dims">
+          <div>
+            <label for="{{ form.dim_a.id_for_label }}">{{ form.dim_a.label }}</label>
+            {{ form.dim_a }}
+          </div>
+          <span class="times">×</span>
+          <div>
+            <label for="{{ form.dim_b.id_for_label }}">{{ form.dim_b.label }}</label>
+            {{ form.dim_b }}
+          </div>
+        </div>
+        {% if form.dim_a.errors or form.dim_b.errors %}
+          <div class="error">{{ form.dim_a.errors|join:" " }} {{ form.dim_b.errors|join:" " }}</div>
+        {% endif %}
+
+        <button type="submit">Decompose</button>
+      </form>
+
+      <h3>Examples</h3>
+      <ul class="examples">
+        {% for key, name in examples.items %}
+          <li><a href="?example={{ key }}">{{ name }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Result</h2>
+      {% if result %}
+        <div class="verdict {% if result.is_entangled %}entangled{% else %}product{% endif %}">
+          {% if result.is_entangled %}Entangled{% else %}Product state (not entangled){% endif %}
+        </div>
+
+        <dl class="stats">
+          <div><dt>Schmidt rank</dt><dd>{{ result.rank }}</dd></div>
+          <div><dt>Entanglement entropy</dt><dd>{{ result.entropy|floatformat:4 }} <small>of max {{ result.max_entropy|floatformat:3 }} bits</small></dd></div>
+          <div><dt>Purity of ρ<sub>A</sub></dt><dd>{{ result.purity|floatformat:4 }}</dd></div>
+        </dl>
+
+        <h3>Schmidt terms</h3>
+        <p class="hint">|ψ⟩ = Σ<sub>k</sub> λ<sub>k</sub> |a<sub>k</sub>⟩ ⊗ |b<sub>k</sub>⟩</p>
+        <table>
+          <thead>
+            <tr><th>k</th><th>λ<sub>k</sub></th><th>λ<sub>k</sub>²</th><th>|a<sub>k</sub>⟩</th><th>|b<sub>k</sub>⟩</th></tr>
+          </thead>
+          <tbody>
+            {% for term in terms %}
+              <tr>
+                <td>{{ term.index }}</td>
+                <td class="coef">
+                  <span class="bar" style="width: {{ term.bar_percent|floatformat:0 }}%"></span>
+                  <span class="num">{{ term.coefficient|floatformat:4 }}</span>
+                </td>
+                <td>{{ term.probability|floatformat:4 }}</td>
+                <td><code>{{ term.vector_a }}</code></td>
+                <td><code>{{ term.vector_b }}</code></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">Enter a state or pick an example to see its decomposition.</p>
+      {% endif %}
+    </section>
+  </main>
+
+  <footer>
+    Built with Django, NumPy and SciPy · <a href="https://github.com/Cezioor/schmidt-calculator">Source on GitHub</a>
+  </footer>
+</body>
+</html>
